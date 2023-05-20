@@ -15,23 +15,64 @@ struct Vertex {
 
 impl Vertex {
     fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
-        todo!()
+        wgpu::VertexBufferLayout{
+           array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
+              step_mode: wgpu::VertexStepMode::Vertex,
+              attributes: &[
+                wgpu::VertexAttribute{
+                    offset: 0,
+                    shader_location: 0,
+                    format: wgpu::VertexFormat::Float32x3,
+                },
+                wgpu::VertexAttribute{
+                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
+                    shader_location: 1,
+                    format: wgpu::VertexFormat::Float32x3,
+                },
+              ]
+        }
     }
 }
 
 const VERTICES: &[Vertex] = &[
-    Vertex {
-        position: [0.0, 0.5, 0.0],
-        color: [1.0, 0.0, 0.0],
-    },
-    Vertex {
-        position: [-0.5, -0.5, 0.0],
-        color: [0.0, 1.0, 0.0],
-    },
-    Vertex {
-        position: [0.5, -0.5, 0.0],
-        color: [0.0, 0.0, 1.0],
-    },
+    Vertex { position: [-0.5, -0.5, 0.5], color: [1.0, 0.0, 0.0] },
+    Vertex { position: [0.5, -0.5, 0.5], color: [0.0, 1.0, 0.0] },
+    Vertex { position: [0.5, 0.5, 0.5], color: [0.0, 0.0, 1.0] },
+    Vertex { position: [-0.5, 0.5, 0.5], color: [1.0, 1.0, 1.0] },
+    // Back face
+    Vertex { position: [-0.5, -0.5, -0.5], color: [1.0, 1.0, 0.0] },
+    Vertex { position: [-0.5, 0.5, -0.5], color: [0.0, 1.0, 1.0] },
+    Vertex { position: [0.5, 0.5, -0.5], color: [1.0, 0.0, 1.0] },
+    Vertex { position: [0.5, -0.5, -0.5], color: [0.5, 0.5, 0.5] },
+    // Top face
+    Vertex { position: [-0.5, 0.5, -0.5], color: [0.5, 0.5, 1.0] },
+    Vertex { position: [-0.5, 0.5, 0.5], color: [0.5, 1.0, 0.5] },
+    Vertex { position: [0.5, 0.5, 0.5], color: [1.0, 0.5, 0.5] },
+    Vertex { position: [0.5, 0.5, -0.5], color: [0.0, 0.0, 0.0] },
+    // Bottom face
+    Vertex { position: [-0.5, -0.5, -0.5], color: [0.0, 0.0, 0.0] },
+    Vertex { position: [0.5, -0.5, -0.5], color: [1.0, 1.0, 1.0] },
+    Vertex { position: [0.5, -0.5, 0.5], color: [0.5, 0.5, 0.5] },
+    Vertex { position: [-0.5, -0.5, 0.5], color: [0.5, 0.5, 1.0] },
+    // Right face
+    Vertex { position: [0.5, -0.5, -0.5], color: [0.5, 1.0, 1.0] },
+    Vertex { position: [0.5, 0.5, -0.5], color: [1.0, 0.5, 1.0] },
+    Vertex { position: [0.5, 0.5, 0.5], color: [0.5, 1.0, 0.5] },
+    Vertex { position: [0.5, -0.5, 0.5], color: [1.0, 1.0, 0.5] },
+    // Left face
+    Vertex { position: [-0.5, -0.5, -0.5], color: [1.0, 0.5, 0.5] },
+    Vertex { position: [-0.5, -0.5, 0.5], color: [0.5, 1.0, 1.0] },
+    Vertex { position: [-0.5, 0.5, 0.5], color: [1.0, 0.5, 1.0] },
+    Vertex { position: [-0.5, 0.5, -0.5], color: [0.5, 0.5, 0.5] },
+];
+
+const INDICES: &[u16] = &[
+    0, 1, 2, 0, 2, 3, // Front face
+    4, 5, 6, 4, 6, 7, // Back face
+    8, 9, 10, 8, 10, 11, // Top face
+    12, 13, 14, 12, 14, 15, // Bottom face
+    16, 17, 18, 16, 18, 19, // Right face
+    20, 21, 22, 20, 22, 23, // Left face
 ];
 
 struct State {
@@ -41,9 +82,10 @@ struct State {
     config: wgpu::SurfaceConfiguration,
     size: winit::dpi::PhysicalSize<u32>, // size of the window in pixels
     window: Window,
-
     render_pipeline: wgpu::RenderPipeline,
-    vertex_buffer: wgpu::Buffer,
+    vertex_buffer: wgpu::Buffer, // vertex buffer is a buffer that contains the vertices of the triangle
+    index_buffer : wgpu::Buffer,
+    num_indices: u32,
 }
 
 impl State {
@@ -125,7 +167,9 @@ impl State {
             vertex: wgpu::VertexState {
                 module: &shader,
                 entry_point: "vs_main", // 1.
-                buffers: &[],           // 2.
+                buffers: &[
+                    Vertex::desc()
+                ],           // 2.
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
@@ -157,11 +201,22 @@ impl State {
             },
             multiview: None, // 5.
         });
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(VERTICES),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
+        let vertex_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(VERTICES),
+                usage: wgpu::BufferUsages::VERTEX,
+            }
+        );
+        // NEW!
+        let index_buffer = device.create_buffer_init(
+            &wgpu::util::BufferInitDescriptor {
+                label: Some("Index Buffer"),
+                contents: bytemuck::cast_slice(INDICES),
+                usage: wgpu::BufferUsages::INDEX,
+            }
+        );
+        let num_indices = INDICES.len() as u32;
         Self {
             window,
             surface,
@@ -171,6 +226,8 @@ impl State {
             size,
             render_pipeline,
             vertex_buffer,
+            index_buffer,
+            num_indices,
         }
     }
     pub fn window(&self) -> &Window {
@@ -185,17 +242,6 @@ impl State {
         }
     }
     fn input(&mut self, event: &WindowEvent) -> bool {
-        // check mouse events
-
-        if let WindowEvent::CursorMoved { position, .. } = event {
-            self.clear_color = wgpu::Color {
-                r: position.x / self.size.width as f64,
-                g: position.y / self.size.height as f64,
-                b: 1.0,
-                a: 1.0,
-            };
-            return true;
-        }
         false
     }
     fn update(&mut self) {}
@@ -232,7 +278,9 @@ impl State {
                 depth_stencil_attachment: None,
             });
             render_pass.set_pipeline(&self.render_pipeline); // 2.
-            render_pass.draw(0..3, 0..1); // 3.
+            render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..)); // 3.
+            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16); // 1.
+            render_pass.draw_indexed(0..self.num_indices, 0, 0..1); // 2.
         }
 
         // submit will accept anything that implements IntoIter
