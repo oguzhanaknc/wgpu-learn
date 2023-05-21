@@ -1,69 +1,44 @@
 use wgpu::util::DeviceExt;
+mod vertex;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
     window::{Window, WindowBuilder},
 };
 
-// lib.rs
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-struct Vertex {
-    position: [f32; 3],
-    color: [f32; 3],
-}
 
-impl Vertex {
-    fn desc<'a>() -> wgpu::VertexBufferLayout<'a> {
-        wgpu::VertexBufferLayout{
-           array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
-              step_mode: wgpu::VertexStepMode::Vertex,
-              attributes: &[
-                wgpu::VertexAttribute{
-                    offset: 0,
-                    shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-                wgpu::VertexAttribute{
-                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
-                    shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-              ]
-        }
-    }
-}
 
-const VERTICES: &[Vertex] = &[
-    Vertex { position: [-0.5, -0.5, 0.5], color: [1.0, 0.0, 0.0] },
-    Vertex { position: [0.5, -0.5, 0.5], color: [0.0, 1.0, 0.0] },
-    Vertex { position: [0.5, 0.5, 0.5], color: [0.0, 0.0, 1.0] },
-    Vertex { position: [-0.5, 0.5, 0.5], color: [1.0, 1.0, 1.0] },
+
+const VERTICES: &[vertex::Vertex] = &[
+    vertex::Vertex { position: [-0.5, -0.5, 0.5], color: [1.0, 0.0, 0.0] },
+    vertex::Vertex { position: [0.5, -0.5, 0.5], color: [0.0, 1.0, 0.0] },
+    vertex::Vertex { position: [0.5, 0.5, 0.5], color: [0.0, 0.0, 1.0] },
+    vertex::Vertex { position: [-0.5, 0.5, 0.5], color: [1.0, 1.0, 1.0] },
     // Back face
-    Vertex { position: [-0.5, -0.5, -0.5], color: [1.0, 1.0, 0.0] },
-    Vertex { position: [-0.5, 0.5, -0.5], color: [0.0, 1.0, 1.0] },
-    Vertex { position: [0.5, 0.5, -0.5], color: [1.0, 0.0, 1.0] },
-    Vertex { position: [0.5, -0.5, -0.5], color: [0.5, 0.5, 0.5] },
+    vertex::Vertex { position: [-0.5, -0.5, -0.5], color: [1.0, 1.0, 0.0] },
+    vertex::Vertex { position: [-0.5, 0.5, -0.5], color: [0.0, 1.0, 1.0] },
+    vertex::Vertex { position: [0.5, 0.5, -0.5], color: [1.0, 0.0, 1.0] },
+    vertex::Vertex { position: [0.5, -0.5, -0.5], color: [0.5, 0.5, 0.5] },
     // Top face
-    Vertex { position: [-0.5, 0.5, -0.5], color: [0.5, 0.5, 1.0] },
-    Vertex { position: [-0.5, 0.5, 0.5], color: [0.5, 1.0, 0.5] },
-    Vertex { position: [0.5, 0.5, 0.5], color: [1.0, 0.5, 0.5] },
-    Vertex { position: [0.5, 0.5, -0.5], color: [0.0, 0.0, 0.0] },
+    vertex::Vertex { position: [-0.5, 0.5, -0.5], color: [0.5, 0.5, 1.0] },
+    vertex::Vertex { position: [-0.5, 0.5, 0.5], color: [0.5, 1.0, 0.5] },
+    vertex::Vertex { position: [0.5, 0.5, 0.5], color: [1.0, 0.5, 0.5] },
+    vertex::Vertex { position: [0.5, 0.5, -0.5], color: [0.0, 0.0, 0.0] },
     // Bottom face
-    Vertex { position: [-0.5, -0.5, -0.5], color: [0.0, 0.0, 0.0] },
-    Vertex { position: [0.5, -0.5, -0.5], color: [1.0, 1.0, 1.0] },
-    Vertex { position: [0.5, -0.5, 0.5], color: [0.5, 0.5, 0.5] },
-    Vertex { position: [-0.5, -0.5, 0.5], color: [0.5, 0.5, 1.0] },
+    vertex::Vertex { position: [-0.5, -0.5, -0.5], color: [0.0, 0.0, 0.0] },
+    vertex::Vertex { position: [0.5, -0.5, -0.5], color: [1.0, 1.0, 1.0] },
+    vertex::Vertex { position: [0.5, -0.5, 0.5], color: [0.5, 0.5, 0.5] },
+    vertex::Vertex { position: [-0.5, -0.5, 0.5], color: [0.5, 0.5, 1.0] },
     // Right face
-    Vertex { position: [0.5, -0.5, -0.5], color: [0.5, 1.0, 1.0] },
-    Vertex { position: [0.5, 0.5, -0.5], color: [1.0, 0.5, 1.0] },
-    Vertex { position: [0.5, 0.5, 0.5], color: [0.5, 1.0, 0.5] },
-    Vertex { position: [0.5, -0.5, 0.5], color: [1.0, 1.0, 0.5] },
+    vertex::Vertex{ position: [0.5, -0.5, -0.5], color: [0.5, 1.0, 1.0] },
+    vertex::Vertex{ position: [0.5, 0.5, -0.5], color: [1.0, 0.5, 1.0] },
+    vertex::Vertex { position: [0.5, 0.5, 0.5], color: [0.5, 1.0, 0.5] },
+    vertex::Vertex{ position: [0.5, -0.5, 0.5], color: [1.0, 1.0, 0.5] },
     // Left face
-    Vertex { position: [-0.5, -0.5, -0.5], color: [1.0, 0.5, 0.5] },
-    Vertex { position: [-0.5, -0.5, 0.5], color: [0.5, 1.0, 1.0] },
-    Vertex { position: [-0.5, 0.5, 0.5], color: [1.0, 0.5, 1.0] },
-    Vertex { position: [-0.5, 0.5, -0.5], color: [0.5, 0.5, 0.5] },
+    vertex::Vertex { position: [-0.5, -0.5, -0.5], color: [1.0, 0.5, 0.5] },
+    vertex::Vertex { position: [-0.5, -0.5, 0.5], color: [0.5, 1.0, 1.0] },
+    vertex::Vertex { position: [-0.5, 0.5, 0.5], color: [1.0, 0.5, 1.0] },
+    vertex::Vertex { position: [-0.5, 0.5, -0.5], color: [0.5, 0.5, 0.5] },
 ];
 
 const INDICES: &[u16] = &[
@@ -103,8 +78,10 @@ impl State {
         //
         // The surface needs to live as long as the window that created it.
         // State owns the window so this should be safe.
-        let surface = unsafe { instance.create_surface(&window) }.unwrap(); // surface is a handle to the surface of the window
+        let surface = unsafe { instance.create_surface(&window) }.unwrap();
 
+     
+    
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
                 power_preference: wgpu::PowerPreference::HighPerformance,
@@ -130,27 +107,27 @@ impl State {
             .await
             .unwrap();
 
-        let surface_caps = surface.get_capabilities(&adapter);
-        // Shader code in this tutorial assumes an sRGB surface texture. Using a different
-        // one will result all the colors coming out darker. If you want to support non
-        // sRGB surfaces, you'll need to account for that when drawing to the frame.
-        let surface_format = surface_caps
-            .formats
-            .iter()
-            .copied()
-            .filter(|f| f.describe().srgb)
-            .next()
-            .unwrap_or(surface_caps.formats[0]);
-        let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: surface_format,
-            width: size.width,
-            height: size.height,
-            present_mode: surface_caps.present_modes[1], // 0 is fifo (first in first out) 1 is mailbox (newest frame) 2 is immediate (tearing) 3 is vsync
-            alpha_mode: surface_caps.alpha_modes[0],
-            view_formats: vec![],
-        };
-        surface.configure(&device, &config);
+            let surface_caps = surface.get_capabilities(&adapter);
+            // Shader code in this tutorial assumes an sRGB surface texture. Using a different
+            // one will result all the colors coming out darker. If you want to support non
+            // sRGB surfaces, you'll need to account for that when drawing to the frame.
+            let surface_format = surface_caps
+                .formats
+                .iter()
+                .copied()
+                .filter(|f| f.describe().srgb)
+                .next()
+                .unwrap_or(surface_caps.formats[0]);
+            let config = wgpu::SurfaceConfiguration {
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                format: surface_format,
+                width: size.width,
+                height: size.height,
+                present_mode: surface_caps.present_modes[1], // 0 is fifo (first in first out) 1 is mailbox (newest frame) 2 is immediate (tearing) 3 is vsync
+                alpha_mode: surface_caps.alpha_modes[0],
+                view_formats: vec![],
+            };
+            surface.configure(&device, &config);
 
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
 
@@ -168,7 +145,7 @@ impl State {
                 module: &shader,
                 entry_point: "vs_main", // 1.
                 buffers: &[
-                    Vertex::desc()
+                    vertex::Vertex::desc()
                 ],           // 2.
             },
             fragment: Some(wgpu::FragmentState {
@@ -241,7 +218,7 @@ impl State {
             self.surface.configure(&self.device, &self.config);
         }
     }
-    fn input(&mut self, event: &WindowEvent) -> bool {
+    fn input(&mut self, _event: &WindowEvent) -> bool {
         false
     }
     fn update(&mut self) {}
@@ -351,3 +328,7 @@ pub async fn run() {
         }
     });
 }
+
+
+// TODO 1: split this code file into different files so it's more readable
+ 
