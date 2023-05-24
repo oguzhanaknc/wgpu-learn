@@ -2,11 +2,6 @@ use wgpu::{Device, TextureFormat};
 use crate::vertex::Vertex;
 
 
-// define a function to create a render pipeline
-pub fn create_render_pipeline() -> wgpu::RenderPipeline {
-    todo!("is not defined yet")
-}
-
 pub fn create_render_pipeline_default(device:&Device,shader: &wgpu::ShaderModule,config_format:TextureFormat) -> wgpu::RenderPipeline {
     let render_pipeline_layout =
     device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {

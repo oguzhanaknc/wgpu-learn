@@ -3,6 +3,23 @@ use winit::window::Window;
 
 
 
+/*
+window: Oluşturulacak yüzeyin bağlı olduğu pencere.
+instance: Vulkan örneği.
+power_preference: Adaptör seçimi için güç tercihi.
+compatible_surface: Yüzeyin uygunluğunu kontrol etmek için kullanılan yüzey.
+force_fallback_adapter: Adaptör seçimi için yedek adaptör kullanımı.
+features: Kullanılacak GPU özellikleri (örneğin, doku sıkıştırma).
+limits: Cihazın sınırları.
+label: Cihazın etiketi.
+usage: Yüzeyin kullanımı.
+format: Yüzeyin biçimi.
+width: Yüzeyin genişliği.
+height: Yüzeyin yüksekliği.
+present_mode: Yüzeyin sunum modu.
+alpha_mode: Yüzeyin alfa modu.
+view_formats: Yüzeyin görünüm biçimleri.
+ */
 pub async fn create_surface(window: &Window,instance: &Instance) -> (Surface,Device,Queue,TextureFormat,SurfaceCapabilities) {
     let surface = unsafe { instance.create_surface(window) }.unwrap();
 

@@ -1,7 +1,7 @@
-use wgpu::util::DeviceExt;
 mod vertex;
 mod render_pipeline;
 mod surface;
+mod buffer;
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
@@ -66,7 +66,7 @@ struct State {
 }
 
 impl State {
-    // Creating somne of the wgpu types requişres async code
+    
     async fn new(window: Window) -> Self {
         let size = window.inner_size(); // size of the window in pixels
 
@@ -95,21 +95,11 @@ impl State {
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
         let render_pipeline = render_pipeline::create_render_pipeline_default(&device, &shader,config.format);
        
-        let vertex_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Vertex Buffer"),
-                contents: bytemuck::cast_slice(VERTICES),
-                usage: wgpu::BufferUsages::VERTEX,
-            }
-        );
-        // NEW!
-        let index_buffer = device.create_buffer_init(
-            &wgpu::util::BufferInitDescriptor {
-                label: Some("Index Buffer"),
-                contents: bytemuck::cast_slice(INDICES),
-                usage: wgpu::BufferUsages::INDEX,
-            }
-        );
+        let vertex_buffer = buffer::create_buffer(&device, "Vertex Buffer", &VERTICES, wgpu::BufferUsages::VERTEX);
+        let index_buffer = buffer::create_buffer(&device, "Index Buffer", &INDICES, wgpu::BufferUsages::INDEX);
+
+
+
         let num_indices = INDICES.len() as u32;
         Self {
             window,
@@ -247,5 +237,5 @@ pub async fn run() {
 }
 
 
-// TODO 1: split this code file into different files so it's more readable
+
  
