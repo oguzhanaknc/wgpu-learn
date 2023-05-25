@@ -1,7 +1,7 @@
-mod vertex;
-mod render_pipeline;
-mod surface;
-mod buffer;
+mod vertex; // vertex class ını ekledim
+mod render_pipeline; // render pipeline oluşturma fonksiyonunu ekledim 
+mod surface; // surface oluşturma fonksiyonunu ekledim
+mod buffer; // buffer oluşturma fonksiyonunu ekledim
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
@@ -15,43 +15,14 @@ const VERTICES: &[vertex::Vertex] = &[
     vertex::Vertex { position: [-0.5, -0.5, 0.5], color: [1.0, 0.0, 0.0] },
     vertex::Vertex { position: [0.5, -0.5, 0.5], color: [0.0, 1.0, 0.0] },
     vertex::Vertex { position: [0.5, 0.5, 0.5], color: [0.0, 0.0, 1.0] },
-    vertex::Vertex { position: [-0.5, 0.5, 0.5], color: [1.0, 1.0, 1.0] },
-    // Back face
-    vertex::Vertex { position: [-0.5, -0.5, -0.5], color: [1.0, 1.0, 0.0] },
-    vertex::Vertex { position: [-0.5, 0.5, -0.5], color: [0.0, 1.0, 1.0] },
-    vertex::Vertex { position: [0.5, 0.5, -0.5], color: [1.0, 0.0, 1.0] },
-    vertex::Vertex { position: [0.5, -0.5, -0.5], color: [0.5, 0.5, 0.5] },
-    // Top face
-    vertex::Vertex { position: [-0.5, 0.5, -0.5], color: [0.5, 0.5, 1.0] },
-    vertex::Vertex { position: [-0.5, 0.5, 0.5], color: [0.5, 1.0, 0.5] },
-    vertex::Vertex { position: [0.5, 0.5, 0.5], color: [1.0, 0.5, 0.5] },
-    vertex::Vertex { position: [0.5, 0.5, -0.5], color: [0.0, 0.0, 0.0] },
-    // Bottom face
-    vertex::Vertex { position: [-0.5, -0.5, -0.5], color: [0.0, 0.0, 0.0] },
-    vertex::Vertex { position: [0.5, -0.5, -0.5], color: [1.0, 1.0, 1.0] },
-    vertex::Vertex { position: [0.5, -0.5, 0.5], color: [0.5, 0.5, 0.5] },
-    vertex::Vertex { position: [-0.5, -0.5, 0.5], color: [0.5, 0.5, 1.0] },
-    // Right face
-    vertex::Vertex{ position: [0.5, -0.5, -0.5], color: [0.5, 1.0, 1.0] },
-    vertex::Vertex{ position: [0.5, 0.5, -0.5], color: [1.0, 0.5, 1.0] },
-    vertex::Vertex { position: [0.5, 0.5, 0.5], color: [0.5, 1.0, 0.5] },
-    vertex::Vertex{ position: [0.5, -0.5, 0.5], color: [1.0, 1.0, 0.5] },
-    // Left face
-    vertex::Vertex { position: [-0.5, -0.5, -0.5], color: [1.0, 0.5, 0.5] },
-    vertex::Vertex { position: [-0.5, -0.5, 0.5], color: [0.5, 1.0, 1.0] },
-    vertex::Vertex { position: [-0.5, 0.5, 0.5], color: [1.0, 0.5, 1.0] },
-    vertex::Vertex { position: [-0.5, 0.5, -0.5], color: [0.5, 0.5, 0.5] },
 ];
 
 const INDICES: &[u16] = &[
-    0, 1, 2, 0, 2, 3, // Front face
-    4, 5, 6, 4, 6, 7, // Back face
-    8, 9, 10, 8, 10, 11, // Top face
-    12, 13, 14, 12, 14, 15, // Bottom face
-    16, 17, 18, 16, 18, 19, // Right face
-    20, 21, 22, 20, 22, 23, // Left face
+    0, 1, 2
 ];
 
+
+// state sınıfını tanımlıyorum
 struct State {
     surface: wgpu::Surface,
     device: wgpu::Device,
@@ -65,10 +36,26 @@ struct State {
     num_indices: u32,
 }
 
+// state sınıfı için fonksiyonlar tanımlıyorum
 impl State {
     
-    async fn new(window: Window) -> Self {
+    // state sınıfının oluşturucu fonksiyonu
+    async fn new(window: Window) -> Self { // Self is the type of the struct
         let size = window.inner_size(); // size of the window in pixels
+ 
+        /*
+                1-) Window oluşturulur. 
+                2-) Instance oluşturulur.
+                3-) Surface oluşturulur.
+                4-) Device oluşturulur.
+                5-) Queue oluşturulur.
+                6-) SurfaceConfiguration oluşturulur.
+                7-) RenderPipeline oluşturulur.
+                8-) Vertex Buffer oluşturulur.
+                9-) Index Buffer oluşturulur.
+        
+         */
+
 
         // The instance is  a handle to our gpu
         // backends: Vulkan, Metal, DX12, Browser WebGPU
@@ -77,20 +64,9 @@ impl State {
             dx12_shader_compiler: Default::default(),
         });
       
-        let (surface,device,queue,surface_format,surface_caps) = surface::create_surface(&window, &instance).await;
-
-
-
-            let config = wgpu::SurfaceConfiguration {
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-                format: surface_format,
-                width: size.width,
-                height: size.height,
-                present_mode: surface_caps.present_modes[1], // 0 is fifo (first in first out) 1 is mailbox (newest frame) 2 is immediate (tearing) 3 is vsync
-                alpha_mode: surface_caps.alpha_modes[0],
-                view_formats: vec![],
-            };
-            surface.configure(&device, &config);
+        let (surface,device,queue,config)
+        = surface::create_surface(&window, &instance).await;
+          
 
         let shader = device.create_shader_module(wgpu::include_wgsl!("shader.wgsl"));
         let render_pipeline = render_pipeline::create_render_pipeline_default(&device, &shader,config.format);

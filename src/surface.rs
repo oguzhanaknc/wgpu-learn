@@ -1,4 +1,4 @@
-use wgpu::{Instance, Surface, Queue, Device, TextureFormat, SurfaceCapabilities};
+use wgpu::{Instance, Surface, Queue, Device, SurfaceConfiguration};
 use winit::window::Window;
 
 
@@ -20,7 +20,7 @@ present_mode: Yüzeyin sunum modu.
 alpha_mode: Yüzeyin alfa modu.
 view_formats: Yüzeyin görünüm biçimleri.
  */
-pub async fn create_surface(window: &Window,instance: &Instance) -> (Surface,Device,Queue,TextureFormat,SurfaceCapabilities) {
+pub async fn create_surface(window: &Window,instance: &Instance) -> (Surface,Device,Queue,SurfaceConfiguration) {
     let surface = unsafe { instance.create_surface(window) }.unwrap();
 
 
@@ -71,5 +71,5 @@ pub async fn create_surface(window: &Window,instance: &Instance) -> (Surface,Dev
         view_formats: vec![],
     };
     surface.configure(&device, &config);
-    (surface,device,queue,surface_format,surface_caps)
+    (surface,device,queue,config)
 }
